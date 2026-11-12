@@ -1,0 +1,269 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jlmai.ai/sentinel/schemas/guard-evidence.schema.json",
+  "title": "SENTINEL Guard Evidence Record",
+  "description": "Shared T1-T5 evidence contract for SENTINEL-connected security Guards.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "event_id",
+    "guard_id",
+    "device_id",
+    "timestamp",
+    "policy_version",
+    "t1_identity",
+    "t2_scope",
+    "t3_integrity",
+    "t4_egress",
+    "t5_evidence",
+    "decision",
+    "decision_reason"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "guard_id": {
+      "type": "string",
+      "enum": [
+        "sentinel",
+        "mobile_guard",
+        "game_guard",
+        "windows_guard",
+        "nvidia_guard"
+      ]
+    },
+    "device_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 128,
+      "description": "Pseudonymous device identifier. Do not store raw hardware identifiers."
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "policy_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "t1_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "requester_id",
+        "subject_id"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/check_status"
+        },
+        "requester_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "subject_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity_evidence_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "t2_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "capability",
+        "resource"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/check_status"
+        },
+        "capability": {
+          "type": "string",
+          "minLength": 1
+        },
+        "resource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "scope_expiry": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "t3_integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "algorithm",
+        "digest"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/check_status"
+        },
+        "algorithm": {
+          "type": "string",
+          "enum": [
+            "SHA-256"
+          ]
+        },
+        "digest": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "signature_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "t4_egress": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "allowed_destinations",
+        "observed_destinations"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/check_status"
+        },
+        "allowed_destinations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "observed_destinations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "t5_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "sequence",
+        "event_hash"
+      ],
+      "properties": {
+        "status": {
+          "$ref": "#/$defs/check_status"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_hash": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "previous_event_hash": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "evidence_ref": {
+          "type": "string"
+        }
+      }
+    },
+    "decision": {
+      "type": "string",
+      "enum": [
+        "ALLOW",
+        "DENY",
+        "HOLD"
+      ]
+    },
+    "decision_reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048
+    }
+  },
+  "$defs": {
+    "check_status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL",
+        "UNKNOWN",
+        "NOT_CHECKED"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "const": "ALLOW"
+          }
+        },
+        "required": [
+          "decision"
+        ]
+      },
+      "then": {
+        "properties": {
+          "t1_identity": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            }
+          },
+          "t2_scope": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            }
+          },
+          "t3_integrity": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            }
+          },
+          "t4_egress": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            }
+          },
+          "t5_evidence": {
+            "properties": {
+              "status": {
+                "const": "PASS"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
